@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>OcrFieldExtractor 操作說明</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    max-width: 960px;
+    margin: 2em auto;
+    padding: 0 1.5em;
+    line-height: 1.7;
+    color: #1f2328;
+    background: #fff;
+  }
+  h1 { border-bottom: 2px solid #0969da; padding-bottom: .3em; }
+  h2 { border-bottom: 1px solid #d0d7de; padding-bottom: .2em; margin-top: 2em; color: #0550ae; }
+  h3 { color: #1f2328; margin-top: 1.5em; }
+  code {
+    background: #f6f8fa;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 0.92em;
+    color: #cf222e;
+  }
+  pre {
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+  }
+  pre code { background: transparent; padding: 0; color: #1f2328; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d7de;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f6f8fa; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  .note {
+    background: #fff8c5;
+    border-left: 4px solid #d4a72c;
+    padding: 10px 14px;
+    margin: 1em 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .warn {
+    background: #ffebe9;
+    border-left: 4px solid #cf222e;
+    padding: 10px 14px;
+    margin: 1em 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .tip {
+    background: #dafbe1;
+    border-left: 4px solid #1a7f37;
+    padding: 10px 14px;
+    margin: 1em 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .toc {
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 1em 1.5em;
+  }
+  .toc ul { margin: 0; padding-left: 1.5em; }
+  .toc a { text-decoration: none; color: #0969da; }
+  .toc a:hover { text-decoration: underline; }
+  .kw { color: #cf222e; font-weight: bold; }
+  .ty { color: #0550ae; }
+  .cm { color: #6e7781; font-style: italic; }
+  .st { color: #0a3069; }
+  .diagram {
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: 0.9em;
+    white-space: pre;
+    line-height: 1.4;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+
+<h1>OcrFieldExtractor 操作說明</h1>
+
+<p><code>OcrFieldExtractor</code> 是建立在 <code>OneOcrClient</code> 之上的「欄位抽取」工具單元。流程為:載入影像 → OCR → 在指定區域內找「標籤(label)」→ 沿指定方向(右/左/上/下)取最近的「值(value)」。適合報單、發票、申請書等「LABEL&nbsp;&nbsp;VALUE」式的制式表單。</p>
+
+<div class="tip">
+  <strong>API 採兩步驟設計</strong>:<code>FindLabel</code> 只找標籤,<code>FindValueInDirection</code> 再依方向取值。職責分離,呼叫端決定方向(<code>fdRight</code> / <code>fdLeft</code> / <code>fdUp</code> / <code>fdDown</code>),也方便對同一個 label 試多個方向。需要把同一直欄的值連續往下抓多個時,用 <code>FindNextInDirection</code> 以「上一個值」為新錨點繼續找。若 label 被 OCR 拆成同列多個 box(例:<code>報單號碼</code> → <code>報單</code> + <code>號碼</code>),用 <code>FindKeywordBoxes</code> 以 <code>Rows</code> 重組關鍵字、取得組成它的 box 陣列。
+</div>
+
+<div class="toc">
+  <strong>目錄</strong>
+  <ul>
+    <li><a href="#preparation">一、前置準備</a></li>
+    <li><a href="#quickstart">二、快速開始</a></li>
+    <li><a href="#workflow">三、比對演算法</a></li>
+    <li><a href="#api">四、主要 API</a></li>
+    <li><a href="#region">五、區域(TRegionRect)用法</a></li>
+    <li><a href="#match">六、標籤比對模式</a></li>
+    <li><a href="#direction">七、方向(TFieldDir)用法</a></li>
+    <li><a href="#types">八、資料結構</a></li>
+    <li><a href="#properties">九、屬性設定</a></li>
+    <li><a href="#errors">十、錯誤與邊界情況</a></li>
+    <li><a href="#draw">十一、列舉並繪製到 VCL TImage</a></li>
+    <li><a href="#notes">十二、注意事項</a></li>
+  </ul>
+</div>
+
+<h2 id="preparation">一、前置準備</h2>
+
+<ol>
+  <li>將 <code>OcrFieldExtractor.pas</code> 連同其相依 <code>OneOcrClient.pas</code>、<code>WinJson.pas</code> 加入專案。</li>
+  <li>確認 <code>xAISDK1.exe</code> 可被 <code>TOneOcrClient</code> 找到(主程式 EXE 同目錄,或於 OneOcrClient 中設定 <code>ExePath</code>)。詳見 <code>OneOcrClient.html</code>。</li>
+  <li>在 <code>uses</code> 區塊加入 <code>OneOcrClient, OcrFieldExtractor</code>。</li>
+</ol>
+
+<pre><code><span class="kw">uses</span>
+  OneOcrClient, OcrFieldExtractor;</code></pre>
+
+<h2 id="quickstart">二、快速開始</h2>
+
+<p>最常見用法:<code>LoadImage</code> 一次,後續多次 <code>FindLabel</code> + <code>FindValueInDirection</code> 共用同一份 OCR 結果。</p>
+
+<pre><code><span class="kw">var</span>
+  Ex:       <span class="ty">TOcrFieldExtractor</span>;
+  Box:      <span class="ty">TFieldBox</span>;   <span class="cm">// 從 FindLabel 拿到的「只含 label」的 Box</span>
+  ValueBox: <span class="ty">TFieldBox</span>;   <span class="cm">// 從 FindValueInDirection 拿到的「label + value」</span>
+<span class="kw">begin</span>
+  Ex := <span class="ty">TOcrFieldExtractor</span>.Create;
+  <span class="kw">try</span>
+    Ex.PaddingPixels := <span class="st">25</span>;             <span class="cm">// 視需要;0 表關閉</span>
+    <span class="kw">if not</span> Ex.LoadImage(<span class="st">'C:\1.jpg'</span>) <span class="kw">then</span>
+      <span class="kw">raise</span> Exception.Create(Ex.LastError);
+
+    <span class="cm">// 整張圖找標籤,再沿右側取值</span>
+    Box := Ex.FindLabel(<span class="st">'報單號碼'</span>);
+    <span class="kw">if</span> Box.Found <span class="kw">then</span>
+    <span class="kw">begin</span>
+      ValueBox := Ex.FindValueInDirection(Box, fdRight);
+      <span class="kw">if</span> ValueBox.Found <span class="kw">then</span> ShowMessage(ValueBox.Value);
+    <span class="kw">end</span>;
+
+    <span class="cm">// 若整張圖會撞到同名標籤,改用實際區域</span>
+    Box := Ex.FindLabel(<span class="st">'匯率'</span>, <span class="ty">TRegionRect</span>.Make(L, T, R, B));
+    <span class="kw">if</span> Box.Found <span class="kw">then</span>
+    <span class="kw">begin</span>
+      ValueBox := Ex.FindValueInDirection(Box, fdRight);
+      <span class="kw">if</span> ValueBox.Found <span class="kw">then</span> ShowMessage(ValueBox.Value);
+    <span class="kw">end</span>;
+
+    <span class="cm">// 同一個 Box 可以試多方向 — FindLabel 只跑一次,Box 不要被覆寫</span>
+    Box := Ex.FindLabel(<span class="st">'總計'</span>);
+    <span class="kw">if</span> Box.Found <span class="kw">then</span>
+    <span class="kw">begin</span>
+      ValueBox := Ex.FindValueInDirection(Box, fdRight);
+      <span class="kw">if not</span> ValueBox.Found <span class="kw">then</span>
+        ValueBox := Ex.FindValueInDirection(Box, fdDown);   <span class="cm">// 右側沒值,改試下方</span>
+      <span class="kw">if</span> ValueBox.Found <span class="kw">then</span> ShowMessage(ValueBox.Value);
+    <span class="kw">end</span>;
+
+    <span class="cm">// 需要格式驗證 → 呼叫端自行套 TRegEx.IsMatch(ValueBox.Value, '...')</span>
+  <span class="kw">finally</span>
+    Ex.Free;
+  <span class="kw">end</span>;
+<span class="kw">end</span>;</code></pre>
+
+<div class="note">
+  <strong><code>Found</code> 代表「該次呼叫整體成功」。</strong><code>FindLabel</code> 回傳的 Box,<code>Found</code> 就是「label 是否找到」;<code>FindValueInDirection</code> 回傳的 Box,<code>Found</code> 是「label 找到<strong>且</strong>該方向有取到值」。需要區分「label 沒找到」vs「label 找到但無值」時,看 <code>LabelLineIdx &gt;= 0</code>。
+</div>
+
+<div class="tip">
+  <strong>區域座標怎麼來?</strong>在 OneOcrFormDemo 主表單按下 <em>Extract Fields</em>,可列印出每條 OCR 行的 bbox 對照表,直接抄回程式碼。
+</div>
+
+<h2 id="workflow">三、比對演算法</h2>
+
+<p>整個流程可拆成四步:</p>
+
+<ol>
+  <li><strong>OCR 一次,後續共用</strong>:<code>LoadImage</code> 內部呼叫 <code>TOneOcrClient.Recognize</code>,把 <code>TOcrFileResult</code> 快取於 <code>OcrResult</code> 屬性。之後任意次 <code>FindLabel</code> / <code>FindValueInDirection</code> 都只在記憶體中比對。</li>
+  <li><strong>找標籤</strong>:遍歷 <code>OcrResult.Lines</code>,以 Quad <strong>中心點</strong>是否落入 <code>TRegionRect</code> 判定區域命中,再依 <code>TLabelMatchMode</code> 比對文字。多個命中時取「最上、最左」者。回傳的 <code>TFieldBox</code> 只填 <code>Label*</code>,<code>Value*</code> 留空。</li>
+  <li><strong>依方向收集候選</strong>:呼叫 <code>FindValueInDirection(Box, ADir)</code> 後,以 label 為基準依 <code>ADir</code> 收集候選:
+    <ul>
+      <li><code>fdRight</code> / <code>fdLeft</code>:候選必須<strong>同列</strong>(兩 Quad 的 Y 區間重疊比例 ≥ <code>RowTolerance</code>,預設 0.5);方向以「候選緣 vs label 緣 + 5% slack」判定,距離沿 X 軸主軸邊到邊量測。</li>
+      <li><code>fdUp</code>:候選必須<strong>同欄</strong>(X 區間重疊比例 ≥ <code>RowTolerance</code>);方向以「候選中心 Y &lt; label 中心 Y」判定(避免 OCR 框上下緣略重疊時被排除),距離沿 Y 軸主軸邊到邊量測。</li>
+      <li><code>fdDown</code>:候選必須<strong>同欄</strong>(X 區間重疊比例 ≥ <code>RowTolerance</code>);方向以「候選中心 Y &gt; label 中心 Y」判定,排序鍵改用<strong>中心 dy</strong>(候選中心 Y − label 中心 Y),適合欄高不齊或值偏離 label 中線時穩定取最近列。</li>
+      <li>距離超過<strong>「label 另一軸尺寸 × 50」</strong>視為跨欄/跨列,不認列(常數 <code>MAX_DISTANCE_FACTOR = 50.0</code>)。</li>
+    </ul>
+  </li>
+  <li><strong>選擇值</strong>:候選依排序鍵由近到遠排序(<code>fdRight</code>/<code>fdLeft</code>/<code>fdUp</code> 用主軸邊到邊距離,<code>fdDown</code> 用中心 dy),取最近者填入 <code>Value*</code> 並把 <code>Found</code> 設為 <code>True</code>;無候選時 <code>Value=''</code>、<code>ValueLineIdx=-1</code>、<code>Found=False</code>(<code>LabelLineIdx</code> 仍保留以便除錯或試別的方向)。</li>
+</ol>
+
+<div class="diagram">
+   ┌───────────── ARegion ─────────────┐
+   │                                   │
+   │   [報單號碼]→ slack →[A12345]     │   ← fdRight 同列、X 最近 → 命中
+   │                                   │
+   │   [匯率]    → slack →[31.95]      │
+   │                                   │
+   │   [品名]    → → →[XYZ]            │   ← 太遠時可能被 50× 上限排除
+   └───────────────────────────────────┘</div>
+
+<h2 id="api">四、主要 API</h2>
+
+<h3>LoadImage</h3>
+<pre><code><span class="kw">function</span> LoadImage(<span class="kw">const</span> AImagePath: <span class="ty">string</span>;
+  ACreateAnnotated: <span class="ty">Boolean</span> = <span class="kw">False</span>): <span class="ty">Boolean</span>;</code></pre>
+<p>載入影像並執行 OCR。成功回 <code>True</code> 並把結果寫入 <code>OcrResult</code>;失敗回 <code>False</code>,訊息見 <code>LastError</code>。重複呼叫會覆蓋上次的結果。<code>ACreateAnnotated=True</code>(除錯模式)會在來源圖旁產生標註版 JPG,同時保留 OCR 原始 <code>&lt;image&gt;_J.txt</code>(座標已還原回原圖),方便對照人工檢查。</p>
+
+<h3>FindLabel(整張圖)</h3>
+<pre><code><span class="kw">function</span> FindLabel(<span class="kw">const</span> ALabel: <span class="ty">string</span>;
+  AMatchMode: <span class="ty">TLabelMatchMode</span> = lmStripParens): <span class="ty">TFieldBox</span>; <span class="kw">overload</span>;</code></pre>
+<p>在整張圖中找 label。回傳的 <code>TFieldBox</code> 只填 <code>LabelText</code> / <code>LabelQuad</code> / <code>LabelLineIdx</code>;<code>Value*</code> 留空,呼叫端再以 <code>FindValueInDirection</code> 取值。等同 <code>FindLabel(ALabel, TRegionRect.Whole, AMatchMode)</code>。</p>
+
+<h3>FindLabel(指定區域)</h3>
+<pre><code><span class="kw">function</span> FindLabel(<span class="kw">const</span> ALabel: <span class="ty">string</span>;
+  <span class="kw">const</span> ARegion: <span class="ty">TRegionRect</span>;
+  AMatchMode: <span class="ty">TLabelMatchMode</span> = lmStripParens): <span class="ty">TFieldBox</span>; <span class="kw">overload</span>;</code></pre>
+<p>限制 label 中心點必須落在 <code>ARegion</code> 之內。當整張圖會撞到相同 label(例如表單上下半都有「金額」)時,改用此重載。</p>
+
+<h3>FindValueInDirection</h3>
+<pre><code><span class="kw">function</span> FindValueInDirection(ABox: <span class="ty">TFieldBox</span>;
+  ADir: <span class="ty">TFieldDir</span>): <span class="ty">TFieldBox</span>;</code></pre>
+<p>沿指定方向取 <code>ABox</code> 標籤的最近值。回傳<strong>全新獨立</strong>的 <code>TFieldBox</code>(不會修改 <code>ABox</code>):</p>
+<ul>
+  <li><code>Label*</code> 從 <code>ABox</code> 搬入。</li>
+  <li><code>Value*</code> 填該方向的值;找不到時 <code>Value=''</code>、<code>ValueLineIdx=-1</code>。</li>
+  <li><code>Found</code> 預設 <code>False</code>;<code>ABox</code> 有效(<code>ABox.Found</code> 為 <code>True</code> 且 <code>LabelLineIdx&gt;=0</code>)且該方向真有取到值時才設為 <code>True</code>。</li>
+</ul>
+
+<h3>FindNextInDirection</h3>
+<pre><code><span class="kw">function</span> FindNextInDirection(ABox: <span class="ty">TFieldBox</span>;
+  ADir: <span class="ty">TFieldDir</span>): <span class="ty">TFieldBox</span>;</code></pre>
+<p>以 <code>ABox</code> 的<strong>「值」</strong>(<code>ValueQuad</code> / <code>ValueLineIdx</code>)為新錨點,沿 <code>ADir</code> 繼續找下一個。語意是「從上一個值再走一步」,適合做表格垂直串接,例如把同一欄的明細逐列抓出來。</p>
+<p>注意:若改用 <code>FindValueInDirection(prevResult, fdDown)</code> 重複呼叫,因為 <code>LabelLineIdx</code> 沿用原 label,會一直回到同一個值——所以必須用 <code>FindNextInDirection</code> 才能往下推進。</p>
+
+<h3>DumpCandidatesInDirection</h3>
+<pre><code><span class="kw">function</span> DumpCandidatesInDirection(ABox: <span class="ty">TFieldBox</span>; ADir: <span class="ty">TFieldDir</span>;
+  AUseValueAsAnchor: <span class="ty">Boolean</span> = <span class="kw">False</span>): <span class="ty">string</span>;</code></pre>
+<p>除錯工具。列出 <code>ABox</code> 在 <code>ADir</code> 方向上「<strong>通過所有篩選</strong>(對齊門檻、方向、<code>MaxDist</code>)的候選」,並印出每個候選的 <code>AxisDist</code>(主軸邊到邊距離)、<code>dx</code>/<code>dy</code>(中心相對位移)、<code>Overlap</code>(同列或同欄重疊比例)與原文。第 1 列以 <code>*</code> 標記,就是 <code>FindValueInDirection</code> / <code>FindNextInDirection</code> 實際會選中的那一條。</p>
+<ul>
+  <li><code>AUseValueAsAnchor=False</code>:以 <code>ABox.LabelLineIdx</code> 為錨,等同診斷 <code>FindValueInDirection(ABox, ADir)</code>。</li>
+  <li><code>AUseValueAsAnchor=True</code>:以 <code>ABox.ValueLineIdx</code> 為錨,等同診斷 <code>FindNextInDirection(ABox, ADir)</code>。</li>
+</ul>
+<p>排序鍵與實際 <code>Find*</code> 一致(<code>fdDown</code> 用中心 dy,其餘用主軸邊到邊距離)。回傳是多行字串,直接 <code>ShowMessage</code> 或塞進 <code>TMemo</code> 即可閱讀。典型用法:當某個欄位串抓到非預期的值,先呼叫此函式看候選排行,即可判斷是「真的值沒通過篩選」還是「另一個候選的排序鍵更小」。</p>
+
+<h3>FindKeywordBoxes</h3>
+<pre><code><span class="kw">function</span> FindKeywordBoxes(<span class="kw">const</span> AKeyword: <span class="ty">string</span>;
+  AMatchMode: <span class="ty">TLabelMatchMode</span> = lmContains): <span class="ty">TKeywordMatch</span>; <span class="kw">overload</span>;
+
+<span class="kw">function</span> FindKeywordBoxes(<span class="kw">const</span> AKeyword: <span class="ty">string</span>;
+  <span class="kw">const</span> ARegion: <span class="ty">TRegionRect</span>;
+  AMatchMode: <span class="ty">TLabelMatchMode</span> = lmContains): <span class="ty">TKeywordMatch</span>; <span class="kw">overload</span>;</code></pre>
+<p>找出「<strong>拼出關鍵字字串的 box 陣列</strong>」。專門處理 OCR 把一個 label 拆成<strong>同一列多個 box</strong> 的情況——例如 <code>報單號碼</code> 被切成 <code>報單</code> + <code>號碼</code> 兩條 line,<code>FindLabel</code> 因為只比對單一 line 的文字而抓不到,改用本函式即可重組。</p>
+<p>以 <code>OneOcrClient</code> 重組的 <code>OcrResult.Rows</code> 為基礎(同一水平帶的 line 併成一列、列內各欄位由左到右排序),在<strong>同一列</strong>內以滑動視窗找出「串接後可組成 <code>AKeyword</code> 的<strong>最短連續欄位區段</strong>」,回傳這些 box。取命中的<strong>最上列</strong>;列內取<strong>最短</strong>區段,長度相同取<strong>最左</strong>。</p>
+<ul>
+  <li>比對前各 box 文字<strong>直接相接、忽略所有空白</strong>;<code>lmStripParens</code> 再去掉結尾的 "(數字)"。</li>
+  <li><code>lmContains</code> <em>(預設)</em>:區段<strong>包含</strong>關鍵字即可——適合關鍵字落在欄位中間,或 OCR 把「值」與「下一個標籤」黏在同一欄(例:<code>274,601[調整金額]</code>、<code>-2,000[申報金額]</code>)的版面;<code>lmExact</code> / <code>lmStripParens</code>:整個區段串接後須<strong>等於</strong>關鍵字。</li>
+  <li>同一列的欄位<strong>直接由左到右串接</strong>,不限制欄與欄之間的距離(同列即屬同一橫帶);靠「最短區段」優先避免抓到過寬的組合。</li>
+  <li>若 <code>Rows</code> 未被填(<code>TOneOcrClient.GroupRows</code> 被關閉),內部會用 <code>GroupLinesIntoRows</code> 臨時重算,呼叫端不必特別處理。</li>
+  <li>找不到時 <code>Found=False</code>、<code>RowIndex=-1</code>、<code>Parts</code> 為空。</li>
+</ul>
+<div class="note">
+  <strong><code>FindKeywordBoxes</code> vs <code>FindLabel</code>。</strong><code>FindLabel</code> 要求一條 line 就完整等於 label;<code>FindKeywordBoxes</code> 允許 label 被拆成同列多個 box 再重組。label 一向是單一 line 時用 <code>FindLabel</code> 即可,只有遇到拆字才需要本函式。本函式<strong>只回 box 陣列</strong>,不負責沿方向取值。
+</div>
+<pre><code><span class="kw">var</span>
+  M: <span class="ty">TKeywordMatch</span>;
+  i: <span class="ty">Integer</span>;
+<span class="kw">begin</span>
+  M := Ex.FindKeywordBoxes(<span class="st">'報單號碼'</span>);
+  <span class="kw">if</span> M.Found <span class="kw">then</span>
+  <span class="kw">begin</span>
+    <span class="kw">for</span> i := <span class="st">0</span> <span class="kw">to</span> High(M.Parts) <span class="kw">do</span>
+      DrawQuad(Cv, M.Parts[i].Quad);   <span class="cm">// 逐個畫出組成關鍵字的 box</span>
+    ShowMessage(M.Text);               <span class="cm">// 重組後的文字;M.MergedQuad 為整體外框</span>
+  <span class="kw">end</span>;
+<span class="kw">end</span>;</code></pre>
+
+<table>
+  <thead><tr><th>呼叫模式</th><th>典型場景</th></tr></thead>
+  <tbody>
+    <tr><td><code>FindLabel('報單號碼')</code> + <code>FindValueInDirection(Box, fdRight)</code></td><td>整張圖中唯一存在的標籤,值在右側。</td></tr>
+    <tr><td><code>FindLabel('金額', TRegionRect.Make(...))</code> + <code>FindValueInDirection(Box, fdRight)</code></td><td>多個同名標籤,以區域區分後再取右側值。</td></tr>
+    <tr><td><code>FindLabel('總計')</code> + <code>FindValueInDirection(Box, fdDown)</code></td><td>表頭欄位,值在下方同欄。</td></tr>
+    <tr><td><code>FindValueInDirection(Box, fdDown)</code> + <code>FindNextInDirection(prev, fdDown)</code> × N</td><td>表格同一欄連續抓多個值;<code>fdDown</code> 以中心 dy 排序,對欄高不齊比邊到邊距離更穩定。</td></tr>
+    <tr><td>呼叫 <code>FindValueInDirection</code> 後 <code>TRegEx.IsMatch(Box.Value, '^\d+\.\d{2,4}$')</code></td><td>需格式驗證時,呼叫端自行套 regex。</td></tr>
+    <tr><td><code>FindKeywordBoxes('報單號碼')</code></td><td>label 被 OCR 拆成同列多個 box,需重組關鍵字並取得組成它的 box 陣列。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="region">五、區域(TRegionRect)用法</h2>
+
+<p>區域使用<strong>原圖像素座標</strong>,與 <code>OcrResult.Lines[i].Quad</code> 同一座標系(若有開 <code>PaddingPixels</code> 已自動還原)。</p>
+
+<pre><code><span class="cm">// 整張圖</span>
+<span class="ty">TRegionRect</span>.Whole;
+
+<span class="cm">// 自訂矩形,例:左上 (100,200) 到右下 (800,400)</span>
+<span class="ty">TRegionRect</span>.Make(<span class="st">100</span>, <span class="st">200</span>, <span class="st">800</span>, <span class="st">400</span>);
+
+<span class="cm">// 工具方法</span>
+R.IsWhole;                  <span class="cm">// 是否為整張圖</span>
+R.ContainsPoint(X, Y);      <span class="cm">// 點是否落入區域</span>
+R.ContainsCenterOf(Quad);   <span class="cm">// Quad 的幾何中心是否落入區域</span></code></pre>
+
+<div class="note">
+  <strong>判定基準是「中心點」,不是「Quad 是否完全在內」。</strong>因此即便 OCR 框略微超出區域,只要中心點在內就會被認列。畫區域時可放寬幾個像素,容忍 OCR 框抖動。
+</div>
+
+<h2 id="match">六、標籤比對模式</h2>
+
+<table>
+  <thead><tr><th>模式</th><th>行為</th><th>適用情境</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>lmExact</code></td>
+      <td>完全相同(忽略大小寫)。</td>
+      <td>已知 label 文字無變化,例如英文標籤。</td>
+    </tr>
+    <tr>
+      <td><code>lmContains</code></td>
+      <td>子字串包含(忽略大小寫)。</td>
+      <td>label 可能有空白或不確定字尾。注意:容易誤命中,優先用區域限制範圍。</td>
+    </tr>
+    <tr>
+      <td><code>lmStripParens</code> <em>(預設)</em></td>
+      <td>先去掉結尾的 "(數字)" 再 Exact 比對。例:OCR 行 <code>"報單號碼(3)"</code>,以 <code>"報單號碼"</code> 即可命中。</td>
+      <td>台灣制式表單最常見:欄位文字後接編號 <code>(3)</code>、<code>(11)</code> 之類。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="direction">七、方向(TFieldDir)用法</h2>
+
+<table>
+  <thead><tr><th>方向</th><th>對齊條件</th><th>主軸 / 距離</th><th>典型情境</th></tr></thead>
+  <tbody>
+    <tr><td><code>fdRight</code></td><td>同列(Y 重疊 ≥ <code>RowTolerance</code>)</td><td>X 軸主軸邊到邊距離,候選左緣 ≥ label 右緣 − slack</td><td>「LABEL&nbsp;&nbsp;VALUE」橫式表單(最常見)。</td></tr>
+    <tr><td><code>fdLeft</code></td><td>同列(Y 重疊 ≥ <code>RowTolerance</code>)</td><td>X 軸主軸邊到邊距離,候選右緣 ≤ label 左緣 + slack</td><td>label 在欄位右邊;或反向確認用。</td></tr>
+    <tr><td><code>fdDown</code></td><td>同欄(X 重疊 ≥ <code>RowTolerance</code>)</td><td><strong>中心 dy</strong>(候選中心 Y − label 中心 Y);方向以「候選中心 Y &gt; label 中心 Y」判定</td><td>表頭欄位,值列在下方;表格欄。中心 dy + 中心向下對欄高不齊與 OCR 框微重疊都較穩定。</td></tr>
+    <tr><td><code>fdUp</code></td><td>同欄(X 重疊 ≥ <code>RowTolerance</code>)</td><td>Y 軸主軸邊到邊距離;方向以「候選中心 Y &lt; label 中心 Y」判定</td><td>單位、註腳寫在上方時。</td></tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <strong>對同一個 label 試多個方向</strong>很便宜——<code>FindLabel</code> 只跑一次,之後 <code>FindValueInDirection</code> 只在記憶體裡的 <code>Lines</code> 線性掃描。可先試 <code>fdRight</code>,失敗再 <code>fdDown</code>,做 fallback。
+</div>
+
+<h2 id="types">八、資料結構</h2>
+
+<h3>TRegionRect</h3>
+<table>
+  <thead><tr><th>欄位 / 方法</th><th>型別</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td><code>Left, Top, Right, Bottom</code></td><td><code>Integer</code></td><td>原圖像素座標。</td></tr>
+    <tr><td><code>Make(L, T, R, B)</code></td><td><em>class function</em></td><td>建構工具。</td></tr>
+    <tr><td><code>Whole</code></td><td><em>class function</em></td><td>整張圖(以 Integer 邊界值表示)。</td></tr>
+    <tr><td><code>IsWhole</code></td><td><code>Boolean</code></td><td>是否為整張圖。</td></tr>
+    <tr><td><code>ContainsPoint(X, Y)</code></td><td><code>Boolean</code></td><td>點包含測試。</td></tr>
+    <tr><td><code>ContainsCenterOf(Quad)</code></td><td><code>Boolean</code></td><td>Quad 幾何中心是否在內。</td></tr>
+  </tbody>
+</table>
+
+<h3>TFieldDir</h3>
+<pre><code>  <span class="ty">TFieldDir</span> = (fdRight, fdLeft, fdUp, fdDown);</code></pre>
+<p><code>FindValueInDirection</code> / <code>FindNextInDirection</code> 的方向列舉。詳見上方<a href="#direction">七、方向用法</a>。</p>
+
+<h3>TFieldBox</h3>
+<table>
+  <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td><code>Found</code></td><td><code>Boolean</code></td><td>該次呼叫整體成功。<code>FindLabel</code> 回傳:label 找到 → <code>True</code>;<code>FindValueInDirection</code> 回傳:label 找到<strong>且</strong>該方向取到值 → <code>True</code>。其餘情況皆為 <code>False</code>,可由 <code>LabelLineIdx &gt;= 0</code> 區分「label 找到但無值」與「label 沒找到」。</td></tr>
+    <tr><td><code>LabelText</code></td><td><code>string</code></td><td>命中的 label 原文(含 <code>(3)</code> 等尾碼)。</td></tr>
+    <tr><td><code>LabelQuad</code></td><td><code>TOcrQuad</code></td><td>label 的四角座標。</td></tr>
+    <tr><td><code>LabelLineIdx</code></td><td><code>Integer</code></td><td>label 在 <code>OcrResult.Lines</code> 的索引;未找到時為 <code>-1</code>。<code>FindValueInDirection</code> 內部會用此值定位 label。</td></tr>
+    <tr><td><code>Value</code></td><td><code>string</code></td><td>該方向取到的值。</td></tr>
+    <tr><td><code>ValueQuad</code></td><td><code>TOcrQuad</code></td><td>值的四角座標。</td></tr>
+    <tr><td><code>ValueLineIdx</code></td><td><code>Integer</code></td><td>值在 <code>OcrResult.Lines</code> 的索引,方便除錯。無值時為 <code>-1</code>。</td></tr>
+    <tr><td><code>Confidence</code></td><td><code>Single</code></td><td>值所在行的<strong>各字 Confidence 平均</strong>(0..1)。</td></tr>
+  </tbody>
+</table>
+
+<h3>TLabelMatchMode</h3>
+<pre><code>  <span class="ty">TLabelMatchMode</span> = (
+    lmExact,        <span class="cm">// 完全相同(忽略大小寫)</span>
+    lmContains,     <span class="cm">// 子字串包含(忽略大小寫)</span>
+    lmStripParens   <span class="cm">// 去尾 "(數字)" 後 Exact 比對(預設)</span>
+  );</code></pre>
+
+<h3>TKeywordPart</h3>
+<p><code>FindKeywordBoxes</code> 回傳的單一 box(= 一條 line)。</p>
+<table>
+  <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td><code>Text</code></td><td><code>string</code></td><td>該 box 的原文。</td></tr>
+    <tr><td><code>Quad</code></td><td><code>TOcrQuad</code></td><td>該 box 的四角座標。</td></tr>
+    <tr><td><code>LineIdx</code></td><td><code>Integer</code></td><td>該 box 在 <code>OcrResult.Lines</code> 的索引。</td></tr>
+  </tbody>
+</table>
+
+<h3>TKeywordMatch</h3>
+<p><code>FindKeywordBoxes</code> 的回傳型別:組成關鍵字的 box 陣列與彙整資訊。</p>
+<table>
+  <thead><tr><th>欄位</th><th>型別</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td><code>Found</code></td><td><code>Boolean</code></td><td>是否成功拼出關鍵字。</td></tr>
+    <tr><td><code>Keyword</code></td><td><code>string</code></td><td>查詢字串(原樣)。</td></tr>
+    <tr><td><code>Text</code></td><td><code>string</code></td><td>命中區段各 box <strong>直接相接</strong>後的原文(不含分隔字元)。</td></tr>
+    <tr><td><code>Parts</code></td><td><code>TArray&lt;TKeywordPart&gt;</code></td><td>組成關鍵字的 box 陣列,依<strong>左→右</strong>閱讀順序排列。</td></tr>
+    <tr><td><code>MergedQuad</code></td><td><code>TOcrQuad</code></td><td>所有 <code>Parts</code> 的外接框(整體位置)。</td></tr>
+    <tr><td><code>RowIndex</code></td><td><code>Integer</code></td><td>命中所在的 <code>Rows</code> 索引;未命中為 <code>-1</code>。</td></tr>
+    <tr><td><code>Confidence</code></td><td><code>Single</code></td><td>各 <code>Parts</code> 所在行 Confidence 的<strong>平均</strong>(0..1)。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="properties">九、屬性設定</h2>
+
+<table>
+  <thead><tr><th>屬性</th><th>預設值</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>RowTolerance</code></td>
+      <td><code>0.5</code></td>
+      <td>同列/同欄判定門檻。兩 Quad 主軸區間重疊比例 ≥ 此值視為對齊。值越大越嚴格;若標籤與值高度差異大可降到 0.3,但會增加誤判風險。</td>
+    </tr>
+    <tr>
+      <td><code>PaddingPixels</code></td>
+      <td><code>0</code></td>
+      <td>透傳給 <code>TOneOcrClient.PaddingPixels</code>。圖片邊緣有重要文字時可設 <code>25</code> 左右;但會多耗一次 VCL 解碼 + JPG 處理成本。</td>
+    </tr>
+    <tr>
+      <td><code>OcrResult</code> <em>(唯讀)</em></td>
+      <td>—</td>
+      <td>最近一次 <code>LoadImage</code> 的完整 OCR 結果。可直接巡 <code>Lines</code> 做客製化分析。</td>
+    </tr>
+    <tr>
+      <td><code>Loaded</code> <em>(唯讀)</em></td>
+      <td><code>False</code></td>
+      <td><code>LoadImage</code> 是否成功。<code>False</code> 時所有 Find 都會直接回未命中。</td>
+    </tr>
+    <tr>
+      <td><code>LastError</code> <em>(唯讀)</em></td>
+      <td><code>''</code></td>
+      <td><code>LoadImage</code> 失敗時的錯誤訊息(可能來自 <code>TOcrFileResult.Message</code> 或例外文字)。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="errors">十、錯誤與邊界情況</h2>
+
+<table>
+  <thead><tr><th>情境</th><th>回傳行為</th></tr></thead>
+  <tbody>
+    <tr><td><code>LoadImage</code> 尚未被呼叫,或回 <code>False</code></td><td>所有 <code>FindLabel</code> / <code>FindValueInDirection</code> / <code>FindNextInDirection</code> 都回 <code>Found=False</code> 的空 <code>TFieldBox</code>。</td></tr>
+    <tr><td>區域內找不到符合的 label</td><td><code>FindLabel</code> 回 <code>Found=False</code>,其餘欄位為空。</td></tr>
+    <tr><td>對 <code>Found=False</code> 的 Box 呼叫 <code>FindValueInDirection</code> 或 <code>FindNextInDirection</code></td><td>回傳全新空 Box(<code>Found=False</code>,<code>LabelLineIdx=-1</code>),不執行搜尋。</td></tr>
+    <tr><td>對 <code>ValueLineIdx&lt;0</code> 的 Box 呼叫 <code>FindNextInDirection</code></td><td>沒有可用的下一輪錨點,直接回空 Box。</td></tr>
+    <tr><td>找到 label 但該方向無對齊候選</td><td><code>Found=False</code>,但 <code>LabelText/LabelQuad/LabelLineIdx</code> 已填(<code>LabelLineIdx &gt;= 0</code>),<code>Value=''</code>、<code>ValueLineIdx=-1</code>。可保留 Box 試別的方向。</td></tr>
+    <tr><td>多個 label 命中</td><td>取「最上、最左」者(以 Quad 上緣、左緣排序)。</td></tr>
+    <tr><td>多個候選</td><td>依排序鍵由近到遠排序(<code>fdRight/fdLeft/fdUp</code> 用主軸邊到邊距離,<code>fdDown</code> 用中心 dy),取最近者。</td></tr>
+    <tr><td>距離超過<code>label 另一軸尺寸 × 50</code></td><td>排除,避免跨欄/跨列誤抓(以主軸邊到邊距離量,<code>fdDown</code> 亦同)。</td></tr>
+    <tr><td><code>FindKeywordBoxes</code> 任何列都拼不出關鍵字</td><td>回 <code>Found=False</code>、<code>RowIndex=-1</code>、<code>Parts</code> 為空。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="draw">十一、列舉並繪製到 VCL TImage</h2>
+
+<p>OCR 完成後,每一條被偵測到的文字行都存在 <code>OcrResult.Lines[i]</code>(<code>TOcrLine</code>)裡,內含 <code>Text</code> 與 <code>Quad</code>(<code>TOcrQuad</code> = 四角 <code>TOcrPoint</code>,原圖像素座標)。<strong>每一條 Line 就是一個 <code>TFieldBox</code> 候選</strong>——<code>FindLabel</code> / <code>FindValueInDirection</code> 抽出的 <code>LabelQuad</code> / <code>ValueQuad</code> 都來自這個陣列。要在 VCL <code>TImage</code> 上把全部框畫出來,直接遍歷 <code>OcrResult.Lines</code> 即可。</p>
+
+<div class="tip">
+  <strong>畫在 <code>Picture.Bitmap.Canvas</code>,不要畫在 <code>Image.Canvas</code>。</strong>畫在 <code>Picture.Bitmap.Canvas</code> 上的線條會跟著影像一起儲存,並由 <code>TImage</code> 的 <code>Stretch</code> / <code>Proportional</code> 自動縮放;畫在 <code>Image.Canvas</code> 上的線會在 <code>Repaint</code>(切換視窗、最小化還原)時被擦掉。
+</div>
+
+<h3>1. 把原圖載進 TImage</h3>
+<pre><code><span class="kw">uses</span>
+  Graphics, JPEG, OneOcrClient, OcrFieldExtractor;
+
+<span class="kw">procedure</span> <span class="ty">TForm1</span>.LoadAndShow(<span class="kw">const</span> APath: <span class="ty">string</span>);
+<span class="kw">var</span>
+  Jpg: <span class="ty">TJPEGImage</span>;
+<span class="kw">begin</span>
+  Jpg := <span class="ty">TJPEGImage</span>.Create;
+  <span class="kw">try</span>
+    Jpg.LoadFromFile(APath);
+    Image1.Picture.Bitmap.Assign(Jpg);   <span class="cm">// 取得可寫的 Picture.Bitmap.Canvas</span>
+  <span class="kw">finally</span>
+    Jpg.Free;
+  <span class="kw">end</span>;
+<span class="kw">end</span>;</code></pre>
+
+<h3>2. 把 TOcrQuad 畫成多邊形的小工具</h3>
+<p><code>TOcrQuad</code> 是 <code>array[0..3] of TOcrPoint</code>,<code>TOcrPoint</code> 的 X/Y 是 <code>Single</code>;<code>TCanvas.Polygon</code> 收 <code>array of TPoint</code>,要先 <code>Round</code>。</p>
+
+<pre><code><span class="kw">procedure</span> DrawQuad(ACanvas: <span class="ty">TCanvas</span>; <span class="kw">const</span> AQuad: <span class="ty">TOcrQuad</span>);
+<span class="kw">var</span>
+  Pts: <span class="kw">array</span>[<span class="st">0</span>..<span class="st">3</span>] <span class="kw">of</span> <span class="ty">TPoint</span>;
+  i: <span class="ty">Integer</span>;
+<span class="kw">begin</span>
+  <span class="kw">for</span> i := <span class="st">0</span> <span class="kw">to</span> <span class="st">3</span> <span class="kw">do</span>
+    Pts[i] := Point(Round(AQuad[i].X), Round(AQuad[i].Y));
+  ACanvas.Polygon(Pts);
+<span class="kw">end</span>;</code></pre>
+
+<h3>3. 列舉 OcrResult.Lines,把所有框畫到 TImage 上</h3>
+<pre><code><span class="kw">procedure</span> <span class="ty">TForm1</span>.DrawAllBoxes(Ex: <span class="ty">TOcrFieldExtractor</span>);
+<span class="kw">var</span>
+  i: <span class="ty">Integer</span>;
+  Cv: <span class="ty">TCanvas</span>;
+<span class="kw">begin</span>
+  <span class="kw">if not</span> Ex.Loaded <span class="kw">then</span> <span class="kw">Exit</span>;
+
+  Cv := Image1.Picture.Bitmap.Canvas;
+  Cv.Brush.Style := bsClear;            <span class="cm">// 只畫邊框,不填底色蓋住文字</span>
+  Cv.Pen.Color   := clRed;
+  Cv.Pen.Width   := <span class="st">2</span>;
+  Cv.Font.Color  := clBlue;
+  Cv.Font.Size   := <span class="st">9</span>;
+
+  <span class="kw">for</span> i := <span class="st">0</span> <span class="kw">to</span> High(Ex.OcrResult.Lines) <span class="kw">do</span>
+  <span class="kw">begin</span>
+    DrawQuad(Cv, Ex.OcrResult.Lines[i].Quad);
+    <span class="cm">// 行號標在左上角(可選);文字直接落在影像座標上</span>
+    Cv.TextOut(
+      Round(Ex.OcrResult.Lines[i].Quad[<span class="st">0</span>].X),
+      Round(Ex.OcrResult.Lines[i].Quad[<span class="st">0</span>].Y) - <span class="st">14</span>,
+      Format(<span class="st">'#%d'</span>, [i]));
+  <span class="kw">end</span>;
+
+  Image1.Invalidate;                    <span class="cm">// 觸發重繪</span>
+<span class="kw">end</span>;</code></pre>
+
+<h3>4. 進階:用不同顏色標 Label 與 Value</h3>
+<p>有時想視覺化「目前抽到的欄位」——把 <code>FindLabel</code> + <code>FindValueInDirection</code> 拿到的 <code>TFieldBox</code> 用兩種顏色畫出來,即可一眼看出配對對不對。</p>
+
+<pre><code><span class="kw">procedure</span> <span class="ty">TForm1</span>.HighlightField(<span class="kw">const</span> ABox: <span class="ty">TFieldBox</span>);
+<span class="kw">var</span>
+  Cv: <span class="ty">TCanvas</span>;
+<span class="kw">begin</span>
+  <span class="kw">if not</span> ABox.Found <span class="kw">then</span> <span class="kw">Exit</span>;
+
+  Cv := Image1.Picture.Bitmap.Canvas;
+  Cv.Brush.Style := bsClear;
+  Cv.Pen.Width   := <span class="st">3</span>;
+
+  Cv.Pen.Color := clLime;               <span class="cm">// label = 綠</span>
+  DrawQuad(Cv, ABox.LabelQuad);
+
+  <span class="kw">if</span> ABox.ValueLineIdx &gt;= <span class="st">0</span> <span class="kw">then</span>
+  <span class="kw">begin</span>
+    Cv.Pen.Color := clYellow;           <span class="cm">// value = 黃</span>
+    DrawQuad(Cv, ABox.ValueQuad);
+  <span class="kw">end</span>;
+
+  Image1.Invalidate;
+<span class="kw">end</span>;
+
+<span class="cm">// 用法</span>
+<span class="kw">var</span>
+  Box, ValueBox: <span class="ty">TFieldBox</span>;
+<span class="kw">begin</span>
+  Box := Ex.FindLabel(<span class="st">'報單號碼'</span>);
+  ValueBox := Ex.FindValueInDirection(Box, fdRight);
+  HighlightField(ValueBox);             <span class="cm">// 同時畫出 label 與 value 的框</span>
+<span class="kw">end</span>;</code></pre>
+
+<h3>5. 串完整流程(載圖 → OCR → 全部畫框 → 高亮欄位)</h3>
+<pre><code><span class="kw">procedure</span> <span class="ty">TForm1</span>.btnRunClick(Sender: <span class="ty">TObject</span>);
+<span class="kw">var</span>
+  Ex: <span class="ty">TOcrFieldExtractor</span>;
+  Box, ValueBox: <span class="ty">TFieldBox</span>;
+<span class="kw">begin</span>
+  Ex := <span class="ty">TOcrFieldExtractor</span>.Create;
+  <span class="kw">try</span>
+    Ex.PaddingPixels := <span class="st">25</span>;
+    <span class="kw">if not</span> Ex.LoadImage(<span class="st">'C:\1.jpg'</span>) <span class="kw">then</span>
+      <span class="kw">raise</span> Exception.Create(Ex.LastError);
+
+    LoadAndShow(Ex.OcrResult.ImagePath);   <span class="cm">// 先把原圖放進 Image1</span>
+    DrawAllBoxes(Ex);                      <span class="cm">// 紅框:全部 OCR 行</span>
+
+    Box      := Ex.FindLabel(<span class="st">'報單號碼'</span>);
+    ValueBox := Ex.FindValueInDirection(Box, fdRight);
+    HighlightField(ValueBox);              <span class="cm">// 綠/黃框:命中的 label + value</span>
+  <span class="kw">finally</span>
+    Ex.Free;
+  <span class="kw">end</span>;
+<span class="kw">end</span>;</code></pre>
+
+<div class="note">
+  <strong>座標系小提醒。</strong><code>OcrResult.Lines[i].Quad</code> 用<strong>原圖像素座標</strong>,即使呼叫端開了 <code>PaddingPixels</code>,座標也已經由 OneOcrClient 自動還原回原圖(<code>NormalizePaddedResult</code>)。所以畫到「以原圖建出的 <code>Picture.Bitmap</code>」上不需要做任何縮放;若 <code>Image1.Stretch=True</code> 或 <code>Proportional=True</code>,顯示時 VCL 會自己處理。
+</div>
+
+<div class="warn">
+  <strong>不要邊跑 OCR 邊畫到 Image1.Canvas。</strong><code>TImage.Canvas</code> 的內容會在控件下次 <code>Paint</code> 時被擦掉(切換視窗、滾動、改 <code>Visible</code> 都會觸發)。如果只是除錯 hover 效果,可以畫到 <code>Image1.Canvas</code>;但要持久顯示請畫到 <code>Image1.Picture.Bitmap.Canvas</code>。
+</div>
+
+<div class="tip">
+  <strong>不想動 VCL 也行。</strong>若只想看一張標註好的成品圖,<code>LoadImage(APath, True)</code> 會直接在原圖旁產生 <code>&lt;image&gt;_J.jpg</code>(由 xAISDK1.exe 標註),不需要自己畫。VCL 繪製的價值在於<strong>互動</strong>(滑鼠 hover 高亮、點選某行查值),而非靜態輸出。
+</div>
+
+<h2 id="notes">十二、注意事項</h2>
+
+<ul>
+  <li><code>TOcrFieldExtractor</code> 不執行緒安全。若要平行處理多張圖,請每條 worker 各自 <code>Create/LoadImage</code>(底層 <code>TOneOcrClient</code> 也是同樣的限制)。</li>
+  <li>一個實例只快取一張圖。要換圖時直接再呼叫 <code>LoadImage</code> 即可,內部會覆蓋舊結果。</li>
+  <li>呼叫端可隨時讀 <code>OcrResult.Lines</code> 自行做更複雜的版面分析,此單元提供的 Find 只是常用情境的便利包裝。</li>
+  <li>Confidence 取的是「值那一行」<strong>各 word 的算術平均</strong>;若行內僅一個 word,即等於該 word 的 confidence。可用此值做品質門檻,例如 <code>&lt; 0.6</code> 時提示人工檢核。</li>
+  <li><code>RowTolerance</code> 0.5 對多數中文表單適用;遇到 label 字級顯著大於 value(常見於分節標題)時可往下調。</li>
+  <li>若整張圖搜尋會撞到同名 label,優先用 <code>TRegionRect</code> 縮小範圍,而不是改用 <code>lmContains</code>。<code>lmContains</code> 容易把 <code>"金額"</code> 誤命中到 <code>"金額合計"</code>。</li>
+  <li>需要格式驗證時,在呼叫 <code>FindValueInDirection</code> 後自行套 <code>TRegEx.IsMatch(Box.Value, '...')</code>。本單元刻意不混入 regex,讓抽取與驗證職責分離。</li>
+</ul>
+
+<hr>
+<p style="color: #6e7781; font-size: 0.9em;">參考來源:<code>OcrFieldExtractor.pas</code>(依賴 <code>OneOcrClient.pas</code>)</p>
+
+</body>
+</html>
