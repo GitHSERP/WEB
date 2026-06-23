@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-3,.cls-4{fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:4px}.cls-4{fill:red}
+        </style>
+    </defs>
+    <g id="index-accounting" transform="translate(-235 -1167)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(235 1167)"/>
+        <circle id="Ellipse_118" cx="36.5" cy="36.5" r="36.5" fill="rgba(242,6,0,0.1)" transform="translate(235 1225)"/>
+        <g id="Group_176" transform="translate(245 1176.907)">
+            <path id="Path_238" d="M33.688 25.328v11.135H23.235" class="cls-3"/>
+            <g id="Group_173">
+                <path id="Path_239" d="M35.41 55.2a11.8 11.8 0 1 0 11.708 13.237H35.41z" class="cls-4"/>
+                <path id="Path_240" d="M41.216 48.584v13.235h11.708a11.743 11.743 0 0 0-11.708-13.235z" class="cls-3"/>
+            </g>
+            <g id="Group_175">
+                <path id="Path_241" d="M65.133 92.333a4.408 4.408 0 0 1-4.4-4.395v-47.08a4.408 4.408 0 0 1 4.4-4.4h17.244v-14.97a4.408 4.408 0 0 0-4.395-4.4H31.47L15 33.563v64.949a4.408 4.408 0 0 0 4.4 4.395h58.582a4.408 4.408 0 0 0 4.395-4.395v-6.179z" class="cls-3"/>
+                <g id="Group_174">
+                    <path id="Rectangle_187" d="M0 0H14.754V11.803H0z" class="cls-3" transform="translate(60.738 55.202)"/>
+                    <path id="Rectangle_188" d="M0 0H15.246V11.803H0z" class="cls-3" transform="translate(75.492 55.202)"/>
+                    <path id="Rectangle_189" d="M0 0H15.246V11.803H0z" class="cls-3" transform="translate(75.492 67.005)"/>
+                    <path id="Rectangle_190" d="M0 0H14.754V11.803H0z" class="cls-3" transform="translate(60.738 67.005)"/>
+                    <path id="Path_242" d="M90.738 78.809v13.524h9.867A4.408 4.408 0 0 0 105 87.938V67H90.738z" class="cls-4"/>
+                    <path id="Path_243" d="M100.605 36.463H65.133a4.408 4.408 0 0 0-4.4 4.4V55.2H105V40.858a4.408 4.408 0 0 0-4.395-4.395z" class="cls-3"/>
+                    <path id="Path_244" d="M60.738 78.809v9.129a4.408 4.408 0 0 0 4.4 4.395h10.354V78.809z" class="cls-3"/>
+                    <path id="Rectangle_191" d="M0 0H14.262V11.803H0z" class="cls-3" transform="translate(90.738 55.202)"/>
+                    <path id="Rectangle_192" d="M0 0H15.246V13.525H0z" class="cls-3" transform="translate(75.492 78.809)"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

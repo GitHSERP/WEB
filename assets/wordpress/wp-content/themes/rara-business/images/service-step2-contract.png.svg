@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-4{fill:none;stroke-width:4px;stroke:#000;stroke-linecap:round;stroke-linejoin:round}
+        </style>
+    </defs>
+    <g id="service-step2-contract.png" transform="translate(-235 -1167)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(235 1167)"/>
+        <circle id="Ellipse_118" cx="36.5" cy="36.5" r="36.5" fill="rgba(242,6,0,0.1)" transform="translate(292 1223)"/>
+        <g id="Group_136" transform="translate(-776.723 603.828)">
+            <path id="Path_187" fill="red" stroke="#707070" stroke-width="4px" d="M1077.677 609.666s5.281-6.811 7.844-6.6 7.725 3.6 7.569 5.739-6.816 9.135-6.816 9.135z" transform="translate(36.302 16.43)"/>
+            <path id="Path_188" d="M1103.995 666.666v16.506h-70.271v-100h70.271v37.838" class="cls-4"/>
+            <path id="Line_58" d="M0 0L40.927 0" class="cls-4" transform="translate(1048.782 603.249)"/>
+            <path id="Line_59" d="M0 0L40.927 0" class="cls-4" transform="translate(1048.782 612.129)"/>
+            <path id="Line_60" d="M0 0L24.324 0" class="cls-4" transform="translate(1048.782 621.009)"/>
+            <path id="Path_189" fill="red" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="4px" d="M1039.645 627.461l6.853-7.722 6.757 6.757 15.541-14.672 5.791 5.791-22.008 22.008z" transform="translate(4.89 23.665)"/>
+            <g id="Group_135" transform="translate(1075.651 619.36)">
+                <path id="Path_190" d="M1104.538 618c1.211-1.211 2.47-2.374 3.619-3.639 3.261-3.584 3.1-6.5-.444-9.517-3.036-2.584-5.1-2.511-8.156.46-6.979 6.78-35.007 33.869-39.88 42.2-1.594 2.722-3.7 5.476-2.759 9.055" class="cls-4" transform="translate(-1056.686 -602.991)"/>
+                <path id="Path_191" d="M1104.433 611.213s-4.364 4.382-5.889 5.9c-7.724 7.7-14.651 16.289-23.164 23.1-6.323 5.06-11.4 9.555-18.568 9.555" class="cls-4" transform="translate(-1056.581 -596.2)"/>
+                <path id="Path_192" d="M1078.584 607.237c2.872 3.1 5.735 6.208 8.62 9.3 3.055 3.274 3.13 5.5-.022 8.83-3.088 3.259-6.331 6.371-9.506 9.546" class="cls-4" transform="translate(-1039.349 -599.483)"/>
+                <path id="Line_61" d="M0 0L6.803 7.712" class="cls-4" transform="translate(19.733 27.715)"/>
+            </g>
+        </g>
+    </g>
+</svg>

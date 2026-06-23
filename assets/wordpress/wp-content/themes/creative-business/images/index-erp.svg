@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-3{fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:3.736px}
+        </style>
+    </defs>
+    <g id="index-erp" transform="translate(-1071 -1166)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(1071 1166)"/>
+        <circle id="Ellipse_120" cx="41" cy="41" r="41" fill="rgba(242,6,0,0.1)" transform="translate(1129 1166)"/>
+        <g id="Group_168" transform="translate(1081.423 1176)">
+            <path id="Line_77" d="M0 0L0 50.562" class="cls-3" transform="translate(31.464 20.664)"/>
+            <path id="Path_226" d="M97.423 10.4h-.395v68.324c-.132 0-1.053.4-1.185.4H29.714c-3.7.7-6.95 3.585-7.129 7.347a8.712 8.712 0 0 0 6.1 8.519l34.133-.067" class="cls-3"/>
+            <path id="Path_227" d="M97.028 87.018v8.689h-5.134" class="cls-3"/>
+            <path id="Path_228" d="M96.929 10h-64.8a12.781 12.781 0 0 0-8.6 13.421c-.132 0-.326.008-.457.008v63.62" class="cls-3"/>
+            <path id="Path_229" fill="red" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.736px" d="M67.727 110l9.731-9.374 9.3 9.3V88.993h-.294l-17.784-.2z"/>
+            <path id="Path_230" d="M41.988 57.231q7.719-6.543 16.063-12.293c-.43.377-1.011-.485-1.088-1.052-.828-6.074-.027-13.026 4.654-16.983a11.938 11.938 0 0 1 14.7-.189c-2.669 3.066-4.929 6.746-7.6 9.811a.708.708 0 0 0 .08 1.19l4.323 4.352a2.175 2.175 0 0 0 1.154.744c.683.095 1.268-.454 1.738-.959l7.2-7.746a10.709 10.709 0 0 1 2.55 5.2 13.535 13.535 0 0 1-19.62 15.082c-2.8 2.55-6.412 5.617-9.211 8.166a23.271 23.271 0 0 0-4.852 5.459" class="cls-3"/>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-4{fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:4px}
+        </style>
+    </defs>
+    <g id="service-step1-demo.png" transform="translate(-650 -1166)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(650 1166)"/>
+        <circle id="Ellipse_119" cx="33.5" cy="33.5" r="33.5" fill="rgba(242,6,0,0.1)" transform="translate(653 1181)"/>
+        <path id="Rectangle_166" fill="#f20600" d="M0 0H86V13H0z" transform="translate(677 1194)"/>
+        <g id="Group_124" transform="translate(-284.584 720.693)">
+            <path id="Path_151" d="M1046.429 540.583v16.964c-.084.082-.846.669-.93.753h-83.664c-.084.083-.168-.557-.251-.473v-84.016l84.846-.5v23.849" class="cls-4"/>
+            <path id="Line_48" d="M0 0L83.842 0" class="cls-4" transform="translate(961.584 486.863)"/>
+            <path id="Path_155" d="M1003.772 530.039h36.84a5.1 5.1 0 0 0 5.08-5.081v-33.264a5.094 5.094 0 0 0-5.08-5.082h-56.861a5.1 5.1 0 0 0-5.082 5.082v33.264a5.1 5.1 0 0 0 5.082 5.081h6.214a45.086 45.086 0 0 0-.369 9.864 2.451 2.451 0 0 0 .43 1.416c.792.932 2.305.28 3.278-.461 4.069-3.098 7.85-6.425 10.468-10.819z" class="cls-4" transform="translate(13.54 10.543)"/>
+            <path id="Path_156" d="M994.57 496.691a3.7 3.7 0 0 1 1.875-2.785 7.515 7.515 0 0 1 4.718-1.622 5.78 5.78 0 0 1 5.006 4.63 7.538 7.538 0 0 1-2.235 6.668 18.377 18.377 0 0 0-2.389 2.346c-1.05 1.507-1.081 3.476-1.072 5.311" class="cls-4" transform="translate(26.14 15.029)"/>
+        </g>
+    </g>
+</svg>

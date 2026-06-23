@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-3,.cls-4{fill:none;stroke:red;stroke-miterlimit:10;stroke-width:4.545px}.cls-4{stroke:#000}
+        </style>
+    </defs>
+    <g id="service-step3-upgrade.png" transform="translate(-1071 -1166)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(1071 1166)"/>
+        <circle id="Ellipse_120" cx="41" cy="41" r="41" fill="rgba(242,6,0,0.1)" transform="translate(1129 1213)"/>
+        <g id="Group_182" transform="translate(1081.456 1176)">
+            <path id="Path_257" d="M60 71.364H44.091V69.21l7.006-6.8a41.578 41.578 0 0 0 4.179-4.355 11.334 11.334 0 0 0 1.748-2.881 7.185 7.185 0 0 0 .539-2.88c0-1.463-.988-4.309-4.959-5.313s-8.059 1.274-10.391 4.812M45.8 69.009" class="cls-3"/>
+            <path id="Path_258" d="M80.454 64.545H64.545v-3.316l9.422-14.865h1.942v27.272" class="cls-3"/>
+            <path id="Path_259" d="M28.571 27.211A45.42 45.42 0 0 0 60 105.454h6.818V110l16.071-10.228-16.071-10.227v4.546H60a34.082 34.082 0 0 1-21.482-60.549" class="cls-4"/>
+            <path id="Path_260" d="M91.429 92.789A45.421 45.421 0 0 0 60 14.545h-6.818V10L37.111 20.227l16.071 10.228v-4.546H60a34.082 34.082 0 0 1 21.482 60.549" class="cls-4"/>
+        </g>
+    </g>
+</svg>

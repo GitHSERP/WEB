@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs>
+        <style>
+            .cls-3{fill:none;stroke:#000;stroke-miterlimit:10;stroke-width:4px}.cls-5{fill:red}
+        </style>
+    </defs>
+    <g id="cs-desktop-conversation" transform="translate(-1071 -1166)">
+        <path id="Icon_Base" fill="none" d="M0 0H140V140H0z" transform="translate(1071 1166)"/>
+        <circle id="Ellipse_120" cx="41" cy="41" r="41" fill="rgba(242,6,0,0.1)" transform="translate(1129 1213)"/>
+        <g id="Group_150" transform="translate(677.127 1122.889)">
+            <circle id="Ellipse_122" cx="10.032" cy="10.032" r="10.032" class="cls-3" transform="translate(439.382 104.359)"/>
+            <path id="Path_196" fill="red" stroke="#000" stroke-miterlimit="10" stroke-width="4px" d="M423.868 116.521s-.86-12.9 17.484-12.9 16.909 12.9 16.909 12.9" transform="translate(8.063 26.245)"/>
+            <path id="Path_197" d="M413.873 113.3h99.743s.972 13.757-7.244 13.757h-85.046s-7.453.571-7.453-13.757z" class="cls-3" transform="translate(0 34.055)"/>
+            <path id="Path_198" d="M437.613 83.323h-13.681a5.136 5.136 0 0 0-5.122 5.122v49.048h85.7v-28.174" class="cls-3" transform="translate(3.985 9.858)"/>
+            <path id="Path_199" d="M448.927 112.1h6.873v14.33s2.006 4.585 6.306 0c2.9-3.1 9.842-10.1 14.053-14.33h17.223a5.139 5.139 0 0 0 5.124-5.124V76.235a5.139 5.139 0 0 0-5.124-5.124h-55.671a5.139 5.139 0 0 0-5.124 5.124v23.447" class="cls-3" transform="translate(15.107)"/>
+            <circle id="Ellipse_123" cx="4.514" cy="4.514" r="4.514" class="cls-5" transform="translate(461.804 86.216)"/>
+            <circle id="Ellipse_124" cx="4.514" cy="4.514" r="4.514" class="cls-5" transform="translate(491.827 86.216)"/>
+            <circle id="Ellipse_125" cx="4.514" cy="4.514" r="4.514" class="cls-5" transform="translate(476.816 86.216)"/>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	
+	>
+<channel>
+	<title>
+	〈稅務會計整體〉的留言	</title>
+	<atom:link href="https://www.hserp.tw/wordpress/%E6%9C%83%E8%A8%88%E5%B8%B3%E5%8B%99/%E6%9C%83%E8%A8%88%E7%B8%BD%E5%B8%B3%E6%9C%83%E8%A8%88%E5%B8%B3%E5%8B%99/%E7%A8%85%E5%8B%99%E6%9C%83%E8%A8%88%E6%95%B4%E9%AB%94/feed/" rel="self" type="application/rss+xml" />
+	<link>https://www.hserp.tw/wordpress</link>
+	<description></description>
+	<lastBuildDate>Wed, 10 Jun 2020 02:42:15 +0000</lastBuildDate>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=5.9.13</generator>
+</channel>
+</rss>
