@@ -69,22 +69,30 @@ function extractTitle(html) {
 }
 
 function extractBody(html) {
-  // Prefer the main <article> region; fall back to #acc-content (homepage style).
-  let region = '';
+  function clean(region) {
+    return stripTags(region);
+  }
+
+  // Prefer the main <article> region; if it is effectively empty, fall back to
+  // #acc-content. Some top-level landing pages render their real content there
+  // while the article wrapper only carries structure.
   const articleStart = html.search(/<article[\s>]/i);
   if (articleStart !== -1) {
     const articleEnd = html.lastIndexOf('</article>');
-    if (articleEnd > articleStart) region = html.slice(articleStart, articleEnd);
-  }
-  if (!region) {
-    const accStart = html.search(/<div[^>]*id="acc-content"/i);
-    if (accStart !== -1) {
-      const footerStart = html.indexOf('<footer', accStart);
-      region = html.slice(accStart, footerStart === -1 ? undefined : footerStart);
+    if (articleEnd > articleStart) {
+      const body = clean(html.slice(articleStart, articleEnd));
+      if (body) return body;
     }
   }
-  if (!region) region = html;
-  return stripTags(region);
+
+  const accStart = html.search(/<div[^>]*id="acc-content"/i);
+  if (accStart !== -1) {
+    const footerStart = html.indexOf('<footer', accStart);
+    const body = clean(html.slice(accStart, footerStart === -1 ? undefined : footerStart));
+    if (body) return body;
+  }
+
+  return clean(html);
 }
 
 // Only index real content: WordPress single posts and pages. Skip everything

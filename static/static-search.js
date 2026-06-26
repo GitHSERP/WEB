@@ -50,10 +50,14 @@
     return /^pages\/\d{4}\/\d{2}\/\d{2}\//.test(rec.url || '');
   }
 
+  function isProductInfoRecord(rec) {
+    return (rec.url || '') === 'pages/產品資訊/index.html';
+  }
+
   function recordGroup(rec) {
+    if (isProductInfoRecord(rec)) return 0;
     if (isNewsRecord(rec)) return 1;
-    if ((rec.url || '') === 'index.html') return 2;
-    return 0;
+    return 2;
   }
 
   function recordNewsDate(rec) {
@@ -85,7 +89,6 @@
       var s = scoreRec(records[i], terms);
       if (s > 0) out.push({ rec: records[i], score: s });
     }
-    // Keep product/info pages ahead of news. News items are sorted newest-first.
     out.sort(function (a, b) {
       var ag = recordGroup(a.rec);
       var bg = recordGroup(b.rec);
