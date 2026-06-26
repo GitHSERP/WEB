@@ -46,6 +46,22 @@
     return query.toLowerCase().split(/\s+/).filter(Boolean);
   }
 
+  function isNewsRecord(rec) {
+    return /^pages\/\d{4}\/\d{2}\/\d{2}\//.test(rec.url || '');
+  }
+
+  function recordGroup(rec) {
+    if (isNewsRecord(rec)) return 1;
+    if ((rec.url || '') === 'index.html') return 2;
+    return 0;
+  }
+
+  function recordNewsDate(rec) {
+    var m = /^pages\/(\d{4})\/(\d{2})\/(\d{2})\//.exec(rec.url || '');
+    if (!m) return 0;
+    return Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+  }
+
   function scoreRec(rec, terms) {
     var hayTitle = (rec.title || '').toLowerCase();
     var hayText = (rec.text || '').toLowerCase();
@@ -69,7 +85,24 @@
       var s = scoreRec(records[i], terms);
       if (s > 0) out.push({ rec: records[i], score: s });
     }
-    out.sort(function (a, b) { return b.score - a.score; });
+    // Keep product/info pages ahead of news. News items are sorted newest-first.
+    out.sort(function (a, b) {
+      var ag = recordGroup(a.rec);
+      var bg = recordGroup(b.rec);
+      if (ag !== bg) return ag - bg;
+
+      if (ag === 1) {
+        var ad = recordNewsDate(a.rec);
+        var bd = recordNewsDate(b.rec);
+        if (ad !== bd) return bd - ad;
+      }
+
+      if (a.score !== b.score) return b.score - a.score;
+
+      var at = a.rec.title || a.rec.url || '';
+      var bt = b.rec.title || b.rec.url || '';
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
     return out;
   }
 
