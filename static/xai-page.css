@@ -1,0 +1,70 @@
+.xai-page .robotax-hero {
+  background: linear-gradient(135deg, #172554 0%, #3154a5 55%, #2b86c5 100%);
+}
+
+.xai-page .robotax-card {
+  border-top-color: #3154a5;
+}
+
+.xai-page .robotax-benefit strong {
+  color: #3154a5;
+}
+
+.xai-page .robotax-button {
+  color: #25448f;
+}
+
+.xai-page .robotax-button:hover,
+.xai-page .robotax-button:focus,
+.xai-page .robotax-button-secondary {
+  color: #fff;
+}
+
+.xai-page .robotax-button-secondary:hover,
+.xai-page .robotax-button-secondary:focus {
+  color: #25448f;
+}
+
+.xai-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, .65fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.xai-showcase-image {
+  display: block;
+  width: 100%;
+  max-height: 560px;
+  object-fit: contain;
+}
+
+.xai-video-section {
+  text-align: center;
+}
+
+.xai-video-section .robotax-section-intro {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.xai-video {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  height: auto;
+  margin: 32px auto 0;
+  border-radius: 4px;
+  background: #111;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .16);
+}
+
+@media (max-width: 767px) {
+  .xai-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .xai-showcase-image {
+    max-height: 440px;
+  }
+}
